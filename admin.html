@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Auswertung – Geruchsprotokoll</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" hidden>Demo-Modus – zeigt nur Einträge von diesem Gerät</div>
+
+  <main class="view wide" id="viewLogin" hidden>
+    <header class="head"><div class="logo">📊</div><h1>Auswertung</h1><p class="sub js-subtitle"></p></header>
+    <form class="card" id="loginForm">
+      <label class="field"><span>Admin-Code</span><input id="adminCode" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <p class="error" id="loginError" hidden></p>
+      <button class="btn primary big" id="loginBtn">Anzeigen</button>
+    </form>
+  </main>
+
+  <main class="view wide" id="viewDash" hidden>
+    <header class="dash-head">
+      <div>
+        <h1>Geruchsprotokoll – Auswertung</h1>
+        <p class="sub"><span class="js-subtitle"></span> · Stand <span id="asOf"></span></p>
+      </div>
+      <div class="actions no-print">
+        <select id="range">
+          <option value="30">Letzte 30 Tage</option>
+          <option value="90">Letzte 90 Tage</option>
+          <option value="365">Letzte 12 Monate</option>
+          <option value="0" selected>Alles</option>
+        </select>
+        <button class="btn small" id="csvBtn">CSV</button>
+        <button class="btn small" id="printBtn">Drucken / PDF</button>
+        <button class="btn small ghost" id="logoutBtn">Abmelden</button>
+      </div>
+    </header>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="grid2">
+      <div class="card"><h2>Geruchsstunden pro Monat</h2><div class="bars" id="monthBars"></div></div>
+      <div class="card"><h2>Woher kommt der Wind?</h2><div id="rose"></div><p class="note">Windrichtung zum Zeitpunkt der Meldungen (Open-Meteo).</p></div>
+    </section>
+    <section class="card"><h2>Uhrzeit der Meldungen</h2><div class="bars hours" id="hourBars"></div></section>
+
+    <section class="card">
+      <h2>Alle Meldungen</h2>
+      <div class="table-wrap"><table id="table">
+        <thead><tr><th>Zeitpunkt</th><th>Nr.</th><th>Stärke</th><th>Geruch</th><th>Dauer</th><th>Ort</th><th>Wind</th><th>Notiz</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </section>
+
+    <p class="note method">
+      Geruchsstunde (Schätzung): Jede Stunde, in der mindestens eine Meldung einging. Bei Dauer „1 Std. oder länger“ zählt zusätzlich die Stunde davor.
+      Zum Vergleich: TA Luft Anhang 7 erlaubt in Wohngebieten Geruch in bis zu 10 % der Jahresstunden (~876 h). Die rechtsverbindliche Bewertung erfolgt durch die Behörde.
+    </p>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
