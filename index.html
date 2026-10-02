@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Geruch">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Geruchsprotokoll</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" hidden>Demo-Modus – Einträge bleiben nur auf diesem Gerät</div>
+
+  <!-- Einrichtung (einmalig) -->
+  <main class="view" id="viewSetup" hidden>
+    <header class="head">
+      <div class="logo">👃</div>
+      <h1 class="js-title">Geruchsprotokoll</h1>
+      <p class="sub js-subtitle"></p>
+    </header>
+    <form class="card" id="setupForm" autocomplete="off">
+      <p class="lead">Einmal einrichten – danach reichen zwei Fingertipps pro Meldung.</p>
+      <label class="field">
+        <span>Zugangscode</span>
+        <input id="setupCode" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" required placeholder="vom Nachbarn erhalten">
+      </label>
+      <label class="field">
+        <span>Hausnummer</span>
+        <input id="setupHouse" inputmode="text" required maxlength="20" placeholder="z. B. 7">
+      </label>
+      <label class="field">
+        <span>Name <em>(freiwillig)</em></span>
+        <input id="setupName" maxlength="40" placeholder="z. B. Familie Müller">
+      </label>
+      <p class="error" id="setupError" hidden></p>
+      <button class="btn primary big" type="submit" id="setupBtn">Los geht's</button>
+    </form>
+    <p class="hint">Tipp: Danach im Browser „Zum Home-Bildschirm“ wählen – dann ist die App immer griffbereit.</p>
+  </main>
+
+  <!-- Hauptansicht -->
+  <main class="view" id="viewMain" hidden>
+    <header class="head compact">
+      <h1 class="js-title">Geruchsprotokoll</h1>
+      <p class="sub"><span class="js-subtitle"></span> · <button class="link" id="editProfile">Nr. <span id="houseLabel"></span></button></p>
+    </header>
+
+    <section class="card">
+      <h2 class="q">Riecht es gerade?<br><small>Wie stark?</small></h2>
+      <div class="strengths" id="strengths"></div>
+    </section>
+
+    <section class="card details" id="details" hidden>
+      <div class="chip-group">
+        <span class="chip-label">Wonach?</span>
+        <div class="chips" data-name="type"></div>
+      </div>
+      <div class="chip-group">
+        <span class="chip-label">Wie lange schon?</span>
+        <div class="chips" data-name="duration"></div>
+      </div>
+      <div class="chip-group">
+        <span class="chip-label">Wo?</span>
+        <div class="chips" data-name="place"></div>
+      </div>
+      <label class="field">
+        <span>Notiz <em>(freiwillig)</em></span>
+        <input id="note" maxlength="300" placeholder="z. B. Fenster sofort zu gemacht">
+      </label>
+      <button class="btn primary big" id="submitBtn">Eintragen</button>
+      <button class="btn ghost" id="cancelBtn">Abbrechen</button>
+    </section>
+
+    <section class="history" id="historyWrap" hidden>
+      <h3>Deine letzten Meldungen</h3>
+      <ul id="history"></ul>
+    </section>
+  </main>
+
+  <!-- Bestätigung -->
+  <main class="view done" id="viewDone" hidden>
+    <div class="done-inner">
+      <div class="check" id="doneIcon">✓</div>
+      <h2 id="doneTitle">Danke!</h2>
+      <p id="doneText"></p>
+      <p class="wind" id="doneWind"></p>
+      <button class="btn primary big" id="doneBtn">Fertig</button>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
