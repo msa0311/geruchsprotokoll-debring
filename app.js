@@ -15,7 +15,7 @@
     { v: 5, emo: "🤮", label: "unerträglich", c: "var(--s5)" },
   ];
   const CHOICES = {
-    type: ["Frittierfett", "Verbrannt / Rauch", "Gülle / Fäkal", "Chemisch", "Sonstiges"],
+    type: ["Frittierfett", "Fleisch / Räucherei", "Verbrannt / Rauch", "Gülle / Fäkal", "Chemisch", "Sonstiges"],
     duration: ["gerade eben", "ca. 30 Min", "1 Std. oder länger"],
     place: ["draußen", "im Haus", "auf der Straße"],
   };
