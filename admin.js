@@ -33,7 +33,8 @@
     for (const r of rows) {
       const d = new Date(r.time);
       set.add(hourKey(d));
-      if (r.duration === "1 Std. oder länger") set.add(hourKey(new Date(d.getTime() - 3600000)));
+      const back = r.duration === "4 Std. oder länger" ? 4 : r.duration === "1 Std. oder länger" ? 1 : 0;
+      for (let i = 1; i <= back; i++) set.add(hourKey(new Date(d.getTime() - i * 3600000)));
     }
     return set;
   }
