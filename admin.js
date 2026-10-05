@@ -11,6 +11,21 @@
   const pad = (n) => String(n).padStart(2, "0");
   let all = [];
 
+  // Nebel-Einstufung aus Open-Meteo-Modelldaten (Sichtweite in m, WMO-Wettercode 45/48 = Nebel)
+  function fogClass(r) {
+    const v = r.visibility, c = +r.weatherCode;
+    if ((v === "" || v == null || isNaN(+v)) && isNaN(c)) return "";
+    if (c === 45 || c === 48 || (v !== "" && v != null && +v < 1000)) return "Nebel";
+    if (v !== "" && v != null && +v < 5000) return "Dunst";
+    return v === "" || v == null ? "" : "klar";
+  }
+  function fogText(r) {
+    const k = fogClass(r);
+    if (!k) return "";
+    const v = +r.visibility;
+    return k + (isNaN(v) || r.visibility === "" ? "" : ` · ${v >= 1000 ? (v / 1000).toFixed(1).replace(".", ",") + " km" : v + " m"}`);
+  }
+
   async function fetchRows(code) {
     if (DEMO) return JSON.parse(localStorage.getItem("gp_demo_rows") || "[]");
     const r = await fetch(`${C.apiUrl}?action=list&code=${encodeURIComponent(code)}`);
@@ -74,13 +89,24 @@
     }
     rose($("rose"), sec);
 
+    // Nebel vs. Geruchsstärke
+    const groups = { Nebel: [], Dunst: [], klar: [] };
+    for (const r of rows) { const k = fogClass(r); if (k) groups[k].push(+r.strength || 0); }
+    const fogEl = $("fogTable");
+    if (fogEl) {
+      const have = Object.values(groups).some((g) => g.length);
+      fogEl.innerHTML = have ? `<table class="mini"><thead><tr><th>Wetter</th><th>Meldungen</th><th>Ø Stärke</th></tr></thead><tbody>` +
+        Object.entries(groups).map(([k, g]) => `<tr><td>${k}</td><td>${g.length}</td><td>${g.length ? (g.reduce((s, x) => s + x, 0) / g.length).toFixed(1) : "–"}</td></tr>`).join("") +
+        `</tbody></table>` : `<div class="empty">Noch keine Nebeldaten</div>`;
+    }
+
     // Tabelle
     $("table").querySelector("tbody").innerHTML = rows.map((r) => `<tr>
       <td>${esc(new Date(r.time).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }))}</td>
       <td>${esc(r.house)}${r.name ? `<br><small>${esc(r.name)}</small>` : ""}</td>
       <td><span class="pill" style="background:${COLORS[r.strength] || "#999"}">${esc(r.strength)}</span> ${esc(LABELS[r.strength] || "")}</td>
       <td>${esc(r.type)}</td><td>${esc(r.duration)}</td><td>${esc(r.place)}</td>
-      <td>${r.windFrom ? `${esc(r.windFrom)} ${esc(r.windSpeed)} km/h` : "–"}</td>
+      <td>${r.windFrom ? `${esc(r.windFrom)} ${esc(r.windSpeed)} km/h` : "–"}${fogText(r) ? `<br><small>${esc(fogText(r))}</small>` : ""}</td>
       <td>${esc(r.note)}</td></tr>`).join("") || `<tr><td colspan="8" class="empty">Noch keine Meldungen.</td></tr>`;
   }
 
@@ -107,11 +133,11 @@
 
   function csv() {
     const rows = filtered().slice().sort((a, b) => new Date(a.time) - new Date(b.time));
-    const head = ["Datum", "Uhrzeit", "Hausnummer", "Name", "Stärke (1-5)", "Geruchsart", "Dauer", "Ort", "Wind aus", "Wind aus (°)", "Wind km/h", "Böen km/h", "Temperatur °C", "Notiz"];
+    const head = ["Datum", "Uhrzeit", "Hausnummer", "Name", "Stärke (1-5)", "Geruchsart", "Dauer", "Ort", "Wind aus", "Wind aus (°)", "Wind km/h", "Böen km/h", "Temperatur °C", "Sichtweite m", "Luftfeuchte %", "Wettercode", "Nebel", "Notiz"];
     const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = rows.map((r) => {
       const d = new Date(r.time);
-      return [d.toLocaleDateString("de-DE"), d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), r.house, r.name, r.strength, r.type, r.duration, r.place, r.windFrom, r.windDir, r.windSpeed, r.gusts, r.temp, r.note].map(q).join(";");
+      return [d.toLocaleDateString("de-DE"), d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), r.house, r.name, r.strength, r.type, r.duration, r.place, r.windFrom, r.windDir, r.windSpeed, r.gusts, r.temp, r.visibility, r.humidity, r.weatherCode, fogClass(r), r.note].map(q).join(";");
     });
     const blob = new Blob(["\ufeff" + [head.map(q).join(";"), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `geruchsprotokoll-${new Date().toISOString().slice(0, 10)}.csv` });
