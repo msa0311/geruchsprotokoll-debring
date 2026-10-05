@@ -52,10 +52,20 @@
   }
 
   async function fetchWindClient() {
-    const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=wind_speed_10m,wind_direction_10m,temperature_2m&timezone=Europe%2FBerlin`;
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=wind_speed_10m,wind_direction_10m,temperature_2m,visibility,relative_humidity_2m,weather_code&timezone=Europe%2FBerlin`;
     const j = await (await fetch(u, { signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined })).json();
     const d = j.current.wind_direction_10m;
-    return { windDir: d, windFrom: compass(d), windSpeed: Math.round(j.current.wind_speed_10m), temp: j.current.temperature_2m };
+    return { windDir: d, windFrom: compass(d), windSpeed: Math.round(j.current.wind_speed_10m), temp: j.current.temperature_2m, visibility: j.current.visibility, weatherCode: j.current.weather_code };
+  }
+  // Nebel/Dunst aus Sichtweite (m) und WMO-Wettercode (45/48 = Nebel); bei klarer Sicht leer
+  function fogText(w) {
+    if (!w) return "";
+    const v = w.visibility === "" || w.visibility == null ? NaN : +w.visibility;
+    const c = +w.weatherCode;
+    const dist = isNaN(v) ? "" : ` (Sicht ${v >= 1000 ? (v / 1000).toFixed(1).replace(".", ",") + " km" : Math.round(v) + " m"})`;
+    if (c === 45 || c === 48 || v < 1000) return "Nebel erkannt" + dist;
+    if (v < 5000) return "Dunst erkannt" + dist;
+    return "";
   }
   function compass(deg) {
     return ["N", "NO", "O", "SO", "S", "SW", "W", "NW"][Math.round(((deg % 360) / 45)) % 8];
@@ -180,7 +190,13 @@
       ? fmtTime(entry.clientTime) + " Uhr"
       : "Keine Verbindung – wird automatisch gesendet, sobald du wieder online bist.";
     const w = ok && res.last && res.last.wind;
-    $("doneWind").textContent = w && w.windFrom ? `Wind aus ${w.windFrom}, ${w.windSpeed} km/h` : "";
+    const parts = [];
+    if (w && w.windFrom) parts.push(`Wind aus ${w.windFrom}, ${w.windSpeed} km/h`);
+    const fog = fogText(w);
+    if (fog) parts.push(fog);
+    const dw = $("doneWind");
+    dw.textContent = "";
+    parts.forEach((t, i) => { if (i) dw.appendChild(document.createElement("br")); dw.appendChild(document.createTextNode(t)); });
     show("viewDone");
     clearTimeout(showDone.t);
     showDone.t = setTimeout(() => { if (!$("viewDone").hidden) showMain(); }, 6000);
