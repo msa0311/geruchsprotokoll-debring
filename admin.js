@@ -81,13 +81,17 @@
     for (const r of rows) hc[new Date(r.time).getHours()]++;
     bars($("hourBars"), hc.map((v, i) => ({ v, l: i % 3 === 0 ? `${i}h` : "" })), true);
 
-    // Windrose
+    // Windrose aus Stationsmessung (ISTEGA7/10); Windstille (< 1 km/h) separat, ohne Richtung
     const sec = Array(8).fill(0);
+    let calm = 0, noStation = 0;
     for (const r of rows) {
-      if (r.windDir === "" || r.windDir == null || isNaN(+r.windDir)) continue;
-      sec[Math.round((+r.windDir % 360) / 45) % 8]++;
+      if (r.calm === "ja") { calm++; continue; }
+      if (r.calm !== "nein" || r.stationDir === "" || r.stationDir == null || isNaN(+r.stationDir)) { noStation++; continue; }
+      sec[Math.round((+r.stationDir % 360) / 45) % 8]++;
     }
     rose($("rose"), sec);
+    const roseNote = $("roseNote");
+    if (roseNote) roseNote.textContent = `Gemessen an der Wetterstation ISTEGA7 (Mutzershof). Windstill (unter 1 km/h): ${calm} Meldung(en)` + (noStation ? ` · ohne Stationswert: ${noStation}` : "");
 
     // Nebel vs. Geruchsstärke
     const groups = { Nebel: [], Dunst: [], klar: [] };
@@ -106,7 +110,7 @@
       <td>${esc(r.house)}${r.name ? `<br><small>${esc(r.name)}</small>` : ""}</td>
       <td><span class="pill" style="background:${COLORS[r.strength] || "#999"}">${esc(r.strength)}</span> ${esc(LABELS[r.strength] || "")}</td>
       <td>${esc(r.type)}</td><td>${esc(r.duration)}</td><td>${esc(r.place)}</td>
-      <td>${r.windFrom ? `${esc(r.windFrom)} ${esc(r.windSpeed)} km/h` : "–"}${fogText(r) ? `<br><small>${esc(fogText(r))}</small>` : ""}</td>
+      <td>${r.calm === "ja" ? "windstill" : r.stationFrom ? `${esc(r.stationFrom)} ${esc(r.stationSpeed)} km/h` : "–"}${fogText(r) ? `<br><small>${esc(fogText(r))}</small>` : ""}</td>
       <td>${esc(r.note)}</td></tr>`).join("") || `<tr><td colspan="8" class="empty">Noch keine Meldungen.</td></tr>`;
   }
 
@@ -118,7 +122,7 @@
 
   function rose(el, sec) {
     const max = Math.max(1, ...sec), R = 100, cx = 130, cy = 130;
-    if (!sec.some(Boolean)) { el.innerHTML = `<div class="empty">Noch keine Winddaten</div>`; return; }
+    if (!sec.some(Boolean)) { el.innerHTML = `<div class="empty">Keine Meldung mit messbarem Wind</div>`; return; }
     let s = `<svg viewBox="0 0 260 260" role="img" aria-label="Windrose">`;
     for (const f of [0.33, 0.66, 1]) s += `<circle cx="${cx}" cy="${cy}" r="${R * f}" fill="none" stroke="var(--line)"/>`;
     sec.forEach((v, i) => {
@@ -133,11 +137,11 @@
 
   function csv() {
     const rows = filtered().slice().sort((a, b) => new Date(a.time) - new Date(b.time));
-    const head = ["Datum", "Uhrzeit", "Hausnummer", "Name", "Stärke (1-5)", "Geruchsart", "Dauer", "Ort", "Wind aus", "Wind aus (°)", "Wind km/h", "Böen km/h", "Temperatur °C", "Sichtweite m", "Luftfeuchte %", "Wettercode", "Nebel", "Notiz"];
+    const head = ["Datum", "Uhrzeit", "Hausnummer", "Name", "Stärke (1-5)", "Geruchsart", "Dauer", "Ort", "Wind aus", "Wind aus (°)", "Wind km/h", "Böen km/h", "Temperatur °C", "Sichtweite m", "Luftfeuchte %", "Wettercode", "Nebel", "Station", "Station Wind aus", "Station Wind aus (°)", "Station Wind km/h", "Station Böen km/h", "Windstill (Station)", "Notiz"];
     const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = rows.map((r) => {
       const d = new Date(r.time);
-      return [d.toLocaleDateString("de-DE"), d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), r.house, r.name, r.strength, r.type, r.duration, r.place, r.windFrom, r.windDir, r.windSpeed, r.gusts, r.temp, r.visibility, r.humidity, r.weatherCode, fogClass(r), r.note].map(q).join(";");
+      return [d.toLocaleDateString("de-DE"), d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), r.house, r.name, r.strength, r.type, r.duration, r.place, r.windFrom, r.windDir, r.windSpeed, r.gusts, r.temp, r.visibility, r.humidity, r.weatherCode, fogClass(r), r.station, r.stationFrom, r.stationDir, r.stationSpeed, r.stationGusts, r.calm, r.note].map(q).join(";");
     });
     const blob = new Blob(["\ufeff" + [head.map(q).join(";"), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `geruchsprotokoll-${new Date().toISOString().slice(0, 10)}.csv` });
